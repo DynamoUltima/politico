@@ -1,12 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { clsx } from 'clsx';
+import { db } from '../../firebase';
+import { collection, addDoc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const { projects } = useAppContext();
   const [comment, setComment] = useState('');
+  const [authorName, setAuthorName] = useState('');
+  const [comments, setComments] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    const q = query(collection(db, 'projects', id, 'comments'), orderBy('createdAt', 'asc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setComments(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, [id]);
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'projects', id, 'comments'), {
+        author: authorName.trim() || 'Anonymous',
+        text: comment.trim(),
+        createdAt: serverTimestamp(),
+      });
+      setComment('');
+      setAuthorName('');
+    } finally {
+      setSubmitting(false);
+    }
+  };
   
   const project = projects.find(p => p.id === id);
 
@@ -172,39 +203,55 @@ export default function ProjectDetail() {
               <h3 className="text-lg font-bold text-gray-900 tracking-tight mb-4 flex items-center gap-2">
                 <iconify-icon icon="solar:chat-square-like-linear" class="text-blue-600"></iconify-icon>
                 Community Discussion
+                <span className="ml-auto text-xs font-normal text-gray-400">{comments.length} comment{comments.length !== 1 ? 's' : ''}</span>
               </h3>
-              
-              <div className="space-y-4 mb-6 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                 <div className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                   <div className="flex items-center gap-2 mb-1">
-                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">JD</div>
-                     <span className="text-sm font-semibold text-gray-900">John D.</span>
-                   </div>
-                   <p className="text-sm text-gray-600">Really glad to see this moving forward. The area desperately needs it.</p>
-                 </div>
-                 <div className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                   <div className="flex items-center gap-2 mb-1">
-                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">MR</div>
-                     <span className="text-sm font-semibold text-gray-900">Mary R.</span>
-                   </div>
-                   <p className="text-sm text-gray-600">Will this affect local traffic during construction phase?</p>
-                 </div>
+
+              <div className="space-y-4 mb-6 max-h-64 overflow-y-auto pr-1">
+                {comments.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic text-center py-4">Be the first to comment.</p>
+                ) : (
+                  comments.map((c) => {
+                    const initials = c.author.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <div key={c.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700">{initials}</div>
+                          <span className="text-sm font-semibold text-gray-900">{c.author}</span>
+                          {c.createdAt && (
+                            <span className="text-xs text-gray-400 ml-auto">
+                              {new Date(c.createdAt.toDate()).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 pl-8">{c.text}</p>
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); setComment(''); alert("Comment submitted for moderation."); }} className="mt-4 pt-4 border-t border-gray-100">
-                <textarea 
+              <form onSubmit={handleCommentSubmit} className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                <input
+                  type="text"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  placeholder="Your name (optional)"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                />
+                <textarea
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
                   placeholder="Share your thoughts on this project..."
                   rows="3"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   required
-                ></textarea>
-                <button 
+                />
+                <button
                   type="submit"
-                  className="mt-3 w-full bg-gray-900 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  disabled={submitting}
+                  className="w-full bg-gray-900 text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-60"
                 >
-                  Post Comment
+                  {submitting ? 'Posting...' : 'Post Comment'}
                 </button>
               </form>
             </div>

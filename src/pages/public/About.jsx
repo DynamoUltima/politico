@@ -1,6 +1,10 @@
 import React from 'react';
+import { useAppContext } from '../../context/AppContext';
+
+const DEFAULT_PHOTO = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&q=80';
 
 export default function About() {
+  const { mpPhotoURL } = useAppContext();
   return (
     <div className="bg-white min-h-screen">
       
@@ -9,9 +13,9 @@ export default function About() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
             <div className="w-48 h-48 md:w-72 md:h-72 shrink-0 rounded-full border-4 border-white shadow-xl overflow-hidden relative">
-              <img 
-                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&q=80" 
-                alt="Hon. Marcus Thorne" 
+              <img
+                src={mpPhotoURL || DEFAULT_PHOTO}
+                alt="Hon. Marcus Thorne"
                 className="w-full h-full object-cover object-top"
               />
             </div>

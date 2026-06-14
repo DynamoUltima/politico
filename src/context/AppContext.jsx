@@ -1,6 +1,11 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useEffect, useRef, useContext } from 'react';
+import { db, auth } from '../firebase';
+import {
+  collection, onSnapshot, addDoc, updateDoc, doc, setDoc,
+  query, orderBy, writeBatch, increment, deleteDoc
+} from 'firebase/firestore';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
-// Mock Data
 const initialProjects = [
   {
     id: 'p1',
@@ -10,13 +15,14 @@ const initialProjects = [
     sector: 'Education',
     location: 'North District',
     budget: '$1.2M',
+    contractor: 'BuildRight Co.',
     progress: 65,
     timeline: 'Jan 2023 - Dec 2023',
     image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80',
     updates: [
       { date: 'Oct 15, 2023', text: 'Structural framework completed.' },
-      { date: 'Aug 02, 2023', text: 'Demolition phase finished ahead of schedule.' }
-    ]
+      { date: 'Aug 02, 2023', text: 'Demolition phase finished ahead of schedule.' },
+    ],
   },
   {
     id: 'p2',
@@ -26,25 +32,27 @@ const initialProjects = [
     sector: 'Health',
     location: 'Central District',
     budget: '$850K',
+    contractor: 'CityWorks Inc.',
     progress: 100,
     timeline: 'Mar 2022 - Feb 2023',
     image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80',
     updates: [
-      { date: 'Feb 20, 2023', text: 'Grand opening ceremony held with community leaders.' }
-    ]
+      { date: 'Feb 20, 2023', text: 'Grand opening ceremony held with community leaders.' },
+    ],
   },
   {
     id: 'p3',
     title: 'Riverfront Park Revitalization',
-    description: 'Cleaning and restoring the riverfront area, adding new pedestrian pathways, solar lighting, and a children\'s playground.',
+    description: "Cleaning and restoring the riverfront area, adding new pedestrian pathways, solar lighting, and a children's playground.",
     status: 'Upcoming',
     sector: 'Infrastructure',
     location: 'South District',
     budget: '$450K',
+    contractor: 'TBD',
     progress: 0,
     timeline: 'Est. Start: Mar 2024',
     image: 'https://images.unsplash.com/photo-1590483863412-1d577e0344c2?w=800&q=80',
-    updates: []
+    updates: [],
   },
   {
     id: 'p4',
@@ -54,13 +62,14 @@ const initialProjects = [
     sector: 'Infrastructure',
     location: 'Multiple Areas',
     budget: '$2.1M',
+    contractor: 'SolarGrid Solutions',
     progress: 40,
     timeline: 'Jun 2023 - Jun 2024',
     image: 'https://images.unsplash.com/photo-1542338106-444cb3df0fbd?w=800&q=80',
     updates: [
-      { date: 'Nov 01, 2023', text: 'First 200 units installed in East Ward.' }
-    ]
-  }
+      { date: 'Nov 01, 2023', text: 'First 200 units installed in East Ward.' },
+    ],
+  },
 ];
 
 const initialFeedback = [
@@ -76,28 +85,128 @@ const initialNews = [
 
 const AppContext = createContext();
 
+async function seedCollection(colName, items) {
+  const batch = writeBatch(db);
+  items.forEach(({ id, ...data }) => {
+    batch.set(doc(db, colName, id), data);
+  });
+  await batch.commit();
+}
+
 export function AppProvider({ children }) {
-  const [projects, setProjects] = useState(initialProjects);
-  const [feedbacks, setFeedbacks] = useState(initialFeedback);
-  const [news, setNews] = useState(initialNews);
+  const [projects, setProjects] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [news, setNews] = useState([]);
+  const [mpPhotoURL, setMpPhotoURL] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const loadedCount = useRef(0);
 
-  const addFeedback = (newFeedback) => {
-    setFeedbacks([{ ...newFeedback, id: `f${Date.now()}`, date: new Date().toISOString().split('T')[0], upvotes: 0 }, ...feedbacks]);
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const markLoaded = () => {
+    loadedCount.current += 1;
+    if (loadedCount.current >= 3) setLoading(false);
   };
 
-  const upvoteFeedback = (id) => {
-    setFeedbacks(feedbacks.map(f => f.id === id ? { ...f, upvotes: f.upvotes + 1 } : f));
-  };
+  useEffect(() => {
+    const unsubProjects = onSnapshot(collection(db, 'projects'), async (snap) => {
+      if (snap.empty) {
+        await seedCollection('projects', initialProjects);
+        return;
+      }
+      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      markLoaded();
+    });
 
-  const addProject = (project) => {
-    setProjects([{ ...project, id: `p${Date.now()}`, updates: [], progress: parseInt(project.progress) || 0 }, ...projects]);
-  };
+    const unsubFeedbacks = onSnapshot(
+      query(collection(db, 'feedbacks'), orderBy('date', 'desc')),
+      async (snap) => {
+        if (snap.empty) {
+          await seedCollection('feedbacks', initialFeedback);
+          return;
+        }
+        setFeedbacks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        markLoaded();
+      }
+    );
+
+    const unsubNews = onSnapshot(collection(db, 'news'), async (snap) => {
+      if (snap.empty) {
+        await seedCollection('news', initialNews);
+        return;
+      }
+      setNews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      markLoaded();
+    });
+
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'mp_profile'), (snap) => {
+      if (snap.exists()) setMpPhotoURL(snap.data().photoURL || null);
+    });
+
+    return () => {
+      unsubProjects();
+      unsubFeedbacks();
+      unsubNews();
+      unsubSettings();
+    };
+  }, []);
+
+  const updateMpProfile = (photoURL) =>
+    setDoc(doc(db, 'settings', 'mp_profile'), { photoURL }, { merge: true });
+
+  const addNewsItem = (item) =>
+    addDoc(collection(db, 'news'), item);
+
+  const updateNewsItem = (id, data) =>
+    updateDoc(doc(db, 'news', id), data);
+
+  const deleteNewsItem = (id) =>
+    deleteDoc(doc(db, 'news', id));
+
+  const addFeedback = (newFeedback) =>
+    addDoc(collection(db, 'feedbacks'), {
+      ...newFeedback,
+      date: new Date().toISOString().split('T')[0],
+      upvotes: 0,
+    });
+
+  const upvoteFeedback = (id) =>
+    updateDoc(doc(db, 'feedbacks', id), { upvotes: increment(1) });
+
+  const addProject = (project) =>
+    addDoc(collection(db, 'projects'), {
+      ...project,
+      progress: parseInt(project.progress) || 0,
+      updates: [],
+    });
+
+  const updateProject = (id, updatedData) =>
+    updateDoc(doc(db, 'projects', id), updatedData);
+
+  const deleteProject = (id) =>
+    deleteDoc(doc(db, 'projects', id));
+
+  const login = (email, password) =>
+    signInWithEmailAndPassword(auth, email, password);
+
+  const logout = () => signOut(auth);
 
   return (
-    <AppContext.Provider value={{ 
-      projects, setProjects, addProject,
+    <AppContext.Provider value={{
+      projects, addProject, updateProject, deleteProject,
       feedbacks, addFeedback, upvoteFeedback,
-      news 
+      news, addNewsItem, updateNewsItem, deleteNewsItem,
+      mpPhotoURL, updateMpProfile,
+      loading,
+      user, authLoading, login, logout,
     }}>
       {children}
     </AppContext.Provider>

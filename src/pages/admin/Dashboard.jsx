@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -9,7 +10,25 @@ import { clsx } from 'clsx';
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function Dashboard() {
-  const { projects, feedbacks, news } = useAppContext();
+  const { projects, feedbacks, news, loading } = useAppContext();
+  const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm h-24" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-80" />
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-80" />
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-64" />
+      </div>
+    );
+  }
 
   // Prepare data for charts
   const sectorData = useMemo(() => {
@@ -111,7 +130,7 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
           <h3 className="text-lg font-bold text-gray-900 tracking-tight">Recent Feedback</h3>
-          <button className="text-sm text-blue-600 font-medium hover:text-blue-700">View All</button>
+          <button onClick={() => navigate('/admin/feedback')} className="text-sm text-blue-600 font-medium hover:text-blue-700">View All</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
