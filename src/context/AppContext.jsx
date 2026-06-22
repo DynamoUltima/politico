@@ -2,7 +2,8 @@ import React, { createContext, useState, useEffect, useRef, useContext } from 'r
 import { db, auth } from '../firebase';
 import {
   collection, onSnapshot, addDoc, updateDoc, doc, setDoc,
-  query, orderBy, writeBatch, increment, deleteDoc, arrayUnion, arrayRemove
+  query, orderBy, limit, writeBatch, increment, deleteDoc, arrayUnion, arrayRemove,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
@@ -100,6 +101,7 @@ export function AppProvider({ children }) {
   const [mpPhotoURL, setMpPhotoURL] = useState(null);
   const [aboutContent, setAboutContent] = useState(null);
   const [heroBannerImages, setHeroBannerImages] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -161,6 +163,11 @@ export function AppProvider({ children }) {
       setHeroBannerImages(snap.exists() ? (snap.data().images || []) : []);
     });
 
+    const unsubActivityLogs = onSnapshot(
+      query(collection(db, 'activityLogs'), orderBy('timestamp', 'desc'), limit(200)),
+      (snap) => setActivityLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+
     return () => {
       unsubProjects();
       unsubFeedbacks();
@@ -168,29 +175,52 @@ export function AppProvider({ children }) {
       unsubSettings();
       unsubAbout();
       unsubHeroBanner();
+      unsubActivityLogs();
     };
   }, []);
 
+  const logActivity = (action, message, actingUser) => {
+    const u = actingUser || user;
+    return addDoc(collection(db, 'activityLogs'), {
+      uid: u?.uid || null,
+      email: u?.email || 'Unknown',
+      action,
+      message,
+      timestamp: serverTimestamp(),
+    });
+  };
+
   const updateMpProfile = (photoURL) =>
-    setDoc(doc(db, 'settings', 'mp_profile'), { photoURL }, { merge: true });
+    setDoc(doc(db, 'settings', 'mp_profile'), { photoURL }, { merge: true })
+      .then(() => logActivity('settings', 'Updated MP profile photo'));
 
   const updateAboutContent = (data) =>
-    setDoc(doc(db, 'settings', 'about_page'), data, { merge: true });
+    setDoc(doc(db, 'settings', 'about_page'), data, { merge: true })
+      .then(() => logActivity('settings', 'Updated About page content'));
 
   const addHeroBannerImage = (image) =>
-    setDoc(doc(db, 'settings', 'hero_banner'), { images: arrayUnion(image) }, { merge: true });
+    setDoc(doc(db, 'settings', 'hero_banner'), { images: arrayUnion(image) }, { merge: true })
+      .then(() => logActivity('settings', 'Added a homepage hero banner image'));
 
   const removeHeroBannerImage = (image) =>
-    updateDoc(doc(db, 'settings', 'hero_banner'), { images: arrayRemove(image) });
+    updateDoc(doc(db, 'settings', 'hero_banner'), { images: arrayRemove(image) })
+      .then(() => logActivity('settings', 'Removed a homepage hero banner image'));
 
   const addNewsItem = (item) =>
-    addDoc(collection(db, 'news'), item);
+    addDoc(collection(db, 'news'), item)
+      .then(() => logActivity('news', `Published news article "${item.title}"`));
 
-  const updateNewsItem = (id, data) =>
-    updateDoc(doc(db, 'news', id), data);
+  const updateNewsItem = (id, data) => {
+    const title = news.find(n => n.id === id)?.title || id;
+    return updateDoc(doc(db, 'news', id), data)
+      .then(() => logActivity('news', `Updated news article "${title}"`));
+  };
 
-  const deleteNewsItem = (id) =>
-    deleteDoc(doc(db, 'news', id));
+  const deleteNewsItem = (id) => {
+    const title = news.find(n => n.id === id)?.title || id;
+    return deleteDoc(doc(db, 'news', id))
+      .then(() => logActivity('news', `Deleted news article "${title}"`));
+  };
 
   const addFeedback = (newFeedback) =>
     addDoc(collection(db, 'feedbacks'), {
@@ -207,18 +237,30 @@ export function AppProvider({ children }) {
       ...project,
       progress: parseInt(project.progress) || 0,
       updates: [],
-    });
+    }).then(() => logActivity('project', `Created project "${project.title}"`));
 
-  const updateProject = (id, updatedData) =>
-    updateDoc(doc(db, 'projects', id), updatedData);
+  const updateProject = (id, updatedData) => {
+    const title = projects.find(p => p.id === id)?.title || id;
+    return updateDoc(doc(db, 'projects', id), updatedData)
+      .then(() => logActivity('project', `Updated project "${title}"`));
+  };
 
-  const deleteProject = (id) =>
-    deleteDoc(doc(db, 'projects', id));
+  const deleteProject = (id) => {
+    const title = projects.find(p => p.id === id)?.title || id;
+    return deleteDoc(doc(db, 'projects', id))
+      .then(() => logActivity('project', `Deleted project "${title}"`));
+  };
 
-  const login = (email, password) =>
-    signInWithEmailAndPassword(auth, email, password);
+  const login = async (email, password) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    await logActivity('login', 'Signed in to the admin portal', cred.user);
+    return cred;
+  };
 
-  const logout = () => signOut(auth);
+  const logout = async () => {
+    await logActivity('logout', 'Signed out of the admin portal');
+    return signOut(auth);
+  };
 
   return (
     <AppContext.Provider value={{
@@ -228,6 +270,7 @@ export function AppProvider({ children }) {
       mpPhotoURL, updateMpProfile,
       aboutContent, updateAboutContent,
       heroBannerImages, addHeroBannerImage, removeHeroBannerImage,
+      activityLogs,
       loading,
       user, authLoading, login, logout,
     }}>

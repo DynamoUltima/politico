@@ -25,6 +25,7 @@ import ManageProjects from './pages/admin/ManageProjects';
 import ManageNews from './pages/admin/ManageNews';
 import ManageFeedback from './pages/admin/ManageFeedback';
 import Settings from './pages/admin/Settings';
+import ActivityLog from './pages/admin/ActivityLog';
 
 export default function App() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="news" element={<ManageNews />} />
             <Route path="feedback" element={<ManageFeedback />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="activity-log" element={<ActivityLog />} />
           </Route>
         </Routes>
       </BrowserRouter>

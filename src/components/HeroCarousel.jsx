@@ -30,6 +30,7 @@ export default function HeroCarousel({ images, intervalMs = 5000 }) {
         />
       ))}
       <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/30 to-white" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_42%,rgba(255,255,255,0.85),rgba(255,255,255,0)_70%)]" />
     </div>
   );
 }

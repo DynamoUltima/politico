@@ -14,6 +14,7 @@ export default function AdminLayout() {
     { name: 'Feedback Board', path: '/admin/feedback', icon: 'solar:chat-round-dots-linear' },
     { name: 'Manage News', path: '/admin/news', icon: 'solar:document-text-linear' },
     { name: 'MP Settings', path: '/admin/settings', icon: 'solar:user-id-linear' },
+    { name: 'Activity Log', path: '/admin/activity-log', icon: 'solar:clipboard-list-linear' },
   ];
 
   const handleLogout = async () => {
