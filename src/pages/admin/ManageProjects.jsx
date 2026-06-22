@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { clsx } from 'clsx';
+import { formatDate } from '../../utils/formatDate';
 
 export default function ManageProjects() {
   const { projects, addProject, updateProject, deleteProject } = useAppContext();
@@ -200,8 +201,7 @@ export default function ManageProjects() {
                         {/* Add update form */}
                         <div className="flex flex-col sm:flex-row gap-2">
                           <input
-                            type="text"
-                            placeholder="Date (e.g. Nov 01, 2024)"
+                            type="date"
                             className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none w-48 shrink-0"
                             value={newUpdate.date}
                             onChange={(e) => setNewUpdate({ ...newUpdate, date: e.target.value })}
@@ -228,7 +228,7 @@ export default function ManageProjects() {
                           <ul className="space-y-1.5">
                             {(project.updates || []).map((u, i) => (
                               <li key={i} className="flex items-start justify-between gap-4 bg-white rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                                <span className="text-gray-500 font-medium shrink-0">{u.date}</span>
+                                <span className="text-gray-500 font-medium shrink-0">{formatDate(u.date)}</span>
                                 <span className="text-gray-700 flex-1">{u.text}</span>
                                 <button
                                   onClick={() => handleDeleteUpdate(project, i)}

@@ -1,10 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+import { defaultAboutContent } from '../../constants/aboutContent';
+import { defaultHeroBannerImages } from '../../constants/heroBanner';
+import HeroCarousel from '../../components/HeroCarousel';
 import { clsx } from 'clsx';
 
 export default function Home() {
-  const { projects, feedbacks } = useAppContext();
+  const { projects, feedbacks, aboutContent, heroBannerImages } = useAppContext();
+  const content = { ...defaultAboutContent, ...aboutContent };
+  const bannerImages = (heroBannerImages.length > 0 ? heroBannerImages : defaultHeroBannerImages).map(img => img.url);
   
   const completedProjects = projects.filter(p => p.status === 'Completed').length;
   const ongoingProjects = projects.filter(p => p.status === 'Ongoing').length;
@@ -16,18 +21,11 @@ export default function Home() {
     <div className="flex flex-col w-full">
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 lg:pt-36 lg:pb-40 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=1600&q=80" 
-            alt="Community gathering" 
-            className="w-full h-full object-cover object-center opacity-20"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/80 to-white" />
-        </div>
-        
+        <HeroCarousel images={bannerImages} />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="inline-block py-1 px-3 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold tracking-wide uppercase mb-6 border border-blue-100">
-            Working for the 4th District
+            Working for the {content.district}
           </span>
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight mb-8 leading-tight max-w-4xl mx-auto">
             Building a stronger, more <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">connected community.</span>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+import { formatDate } from '../../utils/formatDate';
 
 export default function NewsDetail() {
   const { id } = useParams();
@@ -27,7 +28,7 @@ export default function NewsDetail() {
         </Link>
 
         <header className="mb-10 border-b border-gray-100 pb-10">
-          <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">{item.date}</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">{formatDate(item.date)}</p>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight leading-tight mb-4">{item.title}</h1>
           <p className="text-xl text-gray-500 leading-relaxed">{item.excerpt}</p>
         </header>

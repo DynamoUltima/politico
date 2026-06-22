@@ -6,6 +6,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { clsx } from 'clsx';
+import { formatDate } from '../../utils/formatDate';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -146,7 +147,7 @@ export default function Dashboard() {
             <tbody>
               {feedbacks.slice(0, 5).map((item) => (
                 <tr key={item.id} className="bg-white border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{item.date}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{formatDate(item.date)}</td>
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={clsx(

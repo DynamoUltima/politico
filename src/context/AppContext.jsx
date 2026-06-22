@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useRef, useContext } from 'r
 import { db, auth } from '../firebase';
 import {
   collection, onSnapshot, addDoc, updateDoc, doc, setDoc,
-  query, orderBy, writeBatch, increment, deleteDoc
+  query, orderBy, writeBatch, increment, deleteDoc, arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
@@ -98,6 +98,8 @@ export function AppProvider({ children }) {
   const [feedbacks, setFeedbacks] = useState([]);
   const [news, setNews] = useState([]);
   const [mpPhotoURL, setMpPhotoURL] = useState(null);
+  const [aboutContent, setAboutContent] = useState(null);
+  const [heroBannerImages, setHeroBannerImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -151,16 +153,35 @@ export function AppProvider({ children }) {
       if (snap.exists()) setMpPhotoURL(snap.data().photoURL || null);
     });
 
+    const unsubAbout = onSnapshot(doc(db, 'settings', 'about_page'), (snap) => {
+      if (snap.exists()) setAboutContent(snap.data());
+    });
+
+    const unsubHeroBanner = onSnapshot(doc(db, 'settings', 'hero_banner'), (snap) => {
+      setHeroBannerImages(snap.exists() ? (snap.data().images || []) : []);
+    });
+
     return () => {
       unsubProjects();
       unsubFeedbacks();
       unsubNews();
       unsubSettings();
+      unsubAbout();
+      unsubHeroBanner();
     };
   }, []);
 
   const updateMpProfile = (photoURL) =>
     setDoc(doc(db, 'settings', 'mp_profile'), { photoURL }, { merge: true });
+
+  const updateAboutContent = (data) =>
+    setDoc(doc(db, 'settings', 'about_page'), data, { merge: true });
+
+  const addHeroBannerImage = (image) =>
+    setDoc(doc(db, 'settings', 'hero_banner'), { images: arrayUnion(image) }, { merge: true });
+
+  const removeHeroBannerImage = (image) =>
+    updateDoc(doc(db, 'settings', 'hero_banner'), { images: arrayRemove(image) });
 
   const addNewsItem = (item) =>
     addDoc(collection(db, 'news'), item);
@@ -205,6 +226,8 @@ export function AppProvider({ children }) {
       feedbacks, addFeedback, upvoteFeedback,
       news, addNewsItem, updateNewsItem, deleteNewsItem,
       mpPhotoURL, updateMpProfile,
+      aboutContent, updateAboutContent,
+      heroBannerImages, addHeroBannerImage, removeHeroBannerImage,
       loading,
       user, authLoading, login, logout,
     }}>

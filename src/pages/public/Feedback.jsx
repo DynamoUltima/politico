@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { clsx } from 'clsx';
+import { formatDate } from '../../utils/formatDate';
 
 export default function Feedback() {
   const { feedbacks, addFeedback, upvoteFeedback } = useAppContext();
@@ -172,7 +173,7 @@ export default function Feedback() {
                           )}>
                             {feedback.category}
                           </span>
-                          <span className="text-sm text-gray-500">• {feedback.date}</span>
+                          <span className="text-sm text-gray-500">• {formatDate(feedback.date)}</span>
                         </div>
                       </div>
                       

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { clsx } from 'clsx';
+import { formatDate } from '../../utils/formatDate';
 
 const CATEGORIES = ['All', 'Complaint', 'Suggestion', 'Question'];
 
@@ -77,7 +78,7 @@ export default function ManageFeedback() {
                     )}>
                       {item.category}
                     </span>
-                    <span className="text-xs text-gray-400">{item.date}</span>
+                    <span className="text-xs text-gray-400">{formatDate(item.date)}</span>
                   </div>
                   <p className="text-gray-900 font-medium mb-2 leading-snug">{item.message}</p>
                   <div className="flex items-center gap-2 text-sm text-gray-500">

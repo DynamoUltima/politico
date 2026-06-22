@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { formatDate } from '../../utils/formatDate';
 
 const initialState = { title: '', date: '', excerpt: '', body: '' };
 
@@ -66,7 +67,7 @@ export default function ManageNews() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {field('title', 'Title *', { required: true, type: 'text', placeholder: 'Article headline' })}
-              {field('date', 'Date *', { required: true, type: 'text', placeholder: 'e.g. Oct 28, 2024' })}
+              {field('date', 'Date *', { required: true, type: 'date' })}
             </div>
             {field('excerpt', 'Excerpt *', { required: true, type: 'text', placeholder: 'Short summary shown on the news list' })}
             <div className="space-y-1.5">
@@ -110,7 +111,7 @@ export default function ManageNews() {
                   <td className="px-6 py-4 font-medium text-gray-900 max-w-[200px]">
                     <div className="line-clamp-1">{item.title}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{item.date}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{formatDate(item.date)}</td>
                   <td className="px-6 py-4 text-gray-500 max-w-xs hidden md:table-cell">
                     <div className="line-clamp-1">{item.excerpt}</div>
                   </td>

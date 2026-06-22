@@ -4,6 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { clsx } from 'clsx';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { formatDate } from '../../utils/formatDate';
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -186,7 +187,7 @@ export default function ProjectDetail() {
                        </div>
                        <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] pl-3 md:pl-0">
                          <div className="flex flex-col">
-                           <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">{update.date}</span>
+                           <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">{formatDate(update.date)}</span>
                            <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">{update.text}</p>
                          </div>
                        </div>

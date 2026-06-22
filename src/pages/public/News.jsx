@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+import { formatDate } from '../../utils/formatDate';
 
 export default function News() {
   const { news } = useAppContext();
@@ -21,7 +22,7 @@ export default function News() {
             <Link key={item.id} to={`/news/${item.id}`} className="group block">
               <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start">
                 <div className="shrink-0 w-full md:w-32 pt-1 text-sm text-gray-500 font-medium uppercase tracking-wider">
-                  {item.date}
+                  {formatDate(item.date)}
                 </div>
                 <div className="grow">
                   <h2 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors tracking-tight leading-snug">

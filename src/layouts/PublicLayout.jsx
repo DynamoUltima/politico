@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
+import { useAppContext } from '../context/AppContext';
+import { defaultAboutContent } from '../constants/aboutContent';
 
 export default function PublicLayout() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { aboutContent } = useAppContext();
+  const content = { ...defaultAboutContent, ...aboutContent };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -40,8 +44,8 @@ export default function PublicLayout() {
               <iconify-icon icon="solar:diploma-verified-linear" width="24" height="24"></iconify-icon>
             </div>
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-gray-900 leading-tight">Hon. Marcus Thorne</h1>
-              <p className="text-xs text-gray-500 font-medium">MP, 4th District</p>
+              <h1 className="text-lg font-semibold tracking-tight text-gray-900 leading-tight">{content.name}</h1>
+              <p className="text-xs text-gray-500 font-medium">MP, {content.district}</p>
             </div>
           </Link>
 
@@ -115,10 +119,10 @@ export default function PublicLayout() {
               <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                 <iconify-icon icon="solar:diploma-verified-linear" width="20" height="20"></iconify-icon>
               </div>
-              <h2 className="text-xl font-semibold text-white tracking-tight">Hon. Marcus Thorne</h2>
+              <h2 className="text-xl font-semibold text-white tracking-tight">{content.name}</h2>
             </div>
             <p className="text-sm text-gray-400 max-w-sm leading-relaxed mb-6">
-              Dedicated to transparency, progress, and community-driven development in the 4th District. Working together for a better tomorrow.
+              Dedicated to transparency, progress, and community-driven development in the {content.district}. Working together for a better tomorrow.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -163,7 +167,7 @@ export default function PublicLayout() {
         </div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between text-xs text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Office of Hon. Marcus Thorne. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Office of {content.name}. All rights reserved.</p>
           <div className="mt-4 md:mt-0 space-x-4 flex items-center">
             <Link to="/admin" className="hover:text-white transition-colors flex items-center gap-1">
               <iconify-icon icon="solar:lock-password-linear"></iconify-icon> Admin Access
